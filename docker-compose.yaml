@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  database:
+    image: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      cad-net:
+        ipv4_address: 10.1.0.2
+    env_file:
+      - .env
+    volumes:
+      - $ROOT_MOUNT/postgres:/var/lib/postgresql/data
+  backend-template:
+    build: .
+    image: cr.cadmean.dev/backend-template
+    ports:
+      - "9000:80"
+    networks:
+      cad-net:
+        ipv4_address: 10.1.0.3
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+networks:
+  cad-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.1.0.0/16
+          gateway: 10.1.0.1
