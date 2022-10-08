@@ -55,3 +55,13 @@ Edit `.env` file to your needs.
 
 ### 5. Rename files that start with 'Cad'
 
+## Migrations
+
+Running migrations locally:
+
+```
+dotnet ef migrations add <migration name>
+dotnet ef database update --connection "Host=127.0.0.1;Username=ubunut;Password=\!Devpassword1;Database=dbname"
+```
+
+
