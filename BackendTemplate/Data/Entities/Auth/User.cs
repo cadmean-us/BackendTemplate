@@ -9,6 +9,8 @@ public class User : EntityBase
     public List<UserRole> Roles { get; set; }
     public UserStatus Status { get; set; }
     public string? RefreshToken { get; set; }
+    public string? AppleId { get; set; }
+    public string? GoogleId { get; set; }
 
     public bool HasRole(UserRole role)
     {

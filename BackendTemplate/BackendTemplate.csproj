@@ -14,6 +14,7 @@
       <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
       <PackageReference Include="Cadmean.CoreKit" Version="0.3.3" />
       <PackageReference Include="Cadmean.RPC.ASP" Version="0.4.1" />
+      <PackageReference Include="Google.Apis.Auth" Version="1.57.0" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.9" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.9">
         <PrivateAssets>all</PrivateAssets>
