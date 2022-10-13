@@ -15,7 +15,7 @@ public class AuthRefreshController : FunctionController
 {
     private readonly UnitOfWork unitOfWork = new();
 
-    public Task<JwtAuthorizationTicket> OnCall(RefreshRequest request)
+    public async Task<JwtAuthorizationTicket> OnCall(RefreshRequest request)
     {
         request.Validate();
 
@@ -25,6 +25,12 @@ public class AuthRefreshController : FunctionController
         RpcAssert.IsTrue(jwt.Validate(JwtRefreshAuthorizationOptions.Current), "invalid_refresh_token");
         RpcAssert.IsTrue(user.RefreshToken == request.RefreshToken, "invalid_refresh_token");
 
-        return Task.FromResult(JwtHelper.CreateTicket(user));
+        var ticket = JwtHelper.CreateTicket(user);
+
+        user.RefreshToken = ticket.RefreshToken;
+        unitOfWork.UserRepository.Update(user);
+        await unitOfWork.SaveAsync();
+
+        return ticket;
     }
 }
