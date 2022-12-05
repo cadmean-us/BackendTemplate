@@ -5,19 +5,13 @@ namespace BackendTemplate.Configuration;
 
 public static class JwtAuthorizationOptions
 {
-    public static AuthOptions Current => EnvironmentHelper.IsDevelopment() ? development : production;
+    public static AuthOptions Current { get; private set; }
 
-    private static readonly AuthOptions development = new(
-        "https://vocably.cadmean.dev",
-        "https://vocably.cadmean.dev",
-        Environment.GetEnvironmentVariable("JWT_SECRET"),
-        60
-    );
-
-    private static readonly AuthOptions production = new(
-        "https://vocably.cadmean.dev",
-        "https://vocably.cadmean.dev",
-        Environment.GetEnvironmentVariable("JWT_SECRET"),
-        60
-    );
+    public static void Initialize(IConfiguration configuration)
+    {
+        var jwtSecret = configuration["Haze:JwtSecret"];
+        var issuer = EnvironmentHelper.IsDevelopment() ? "https://hazedev.cadmean.dev" : "https://haze.cadmean.dev";
+        var lifetime = EnvironmentHelper.IsDevelopment() ? 1440 : 30;
+        Current = new AuthOptions(issuer, issuer, jwtSecret, lifetime);
+    }
 }

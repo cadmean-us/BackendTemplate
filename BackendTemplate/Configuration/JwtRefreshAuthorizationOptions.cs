@@ -5,19 +5,12 @@ namespace BackendTemplate.Configuration;
 
 public static class JwtRefreshAuthorizationOptions
 {
-    public static AuthOptions Current => EnvironmentHelper.IsDevelopment() ? development : production;
+    public static AuthOptions Current { get; private set; }
 
-    private static readonly AuthOptions development = new(
-        "https://ari.cadmean.dev",
-        "https://ari.cadmean.dev",
-        Environment.GetEnvironmentVariable("JWT_SECRET"),
-        43200
-    );
-
-    private static readonly AuthOptions production = new(
-        "https://ari.cadmean.dev",
-        "https://ari.cadmean.dev",
-        Environment.GetEnvironmentVariable("JWT_SECRET"),
-        43200
-    );
+    public static void Initialize(IConfiguration configuration)
+    {
+        var jwtSecret = configuration["Haze:JwtSecret"];
+        var issuer = EnvironmentHelper.IsDevelopment() ? "https://hazedev.cadmean.dev" : "https://haze.cadmean.dev";
+        Current = new AuthOptions(issuer, issuer, jwtSecret, 43200);
+    }
 }

@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using BackendTemplate.Data.DTO.Auth;
+using BackendTemplate.Exceptions;
 using Cadmean.CoreKit.Authentication;
 using Cadmean.RPC;
 using Microsoft.IdentityModel.Tokens;
@@ -11,15 +12,16 @@ namespace BackendTemplate.Services.Auth;
 
 public class AppleAuthenticationDelegate : IThirdPartyAuthenticationDelegate
 {
-    public async Task<AuthThirdPartyResult> Authenticate(AuthThirdPartyRequest request)
+    public async Task<AuthThirdPartyResult> Authenticate(AuthThirdPartyRequest request, IConfiguration configuration)
     {
-        var secret = CreateSecretJwt();
+        var secret = CreateSecretJwt(configuration);
         
         using var client = new HttpClient();
-        
+
+        var clientId = configuration["Apple:BundleId"] ?? throw new MissingConfigurationException("Apple:BundleId");
         var content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            { "client_id", Environment.GetEnvironmentVariable("APPLE_BUNDLE_ID") },
+            { "client_id", clientId },
             { "client_secret", secret },
             { "grant_type", "authorization_code" },
             { "code", request.Token }
@@ -33,7 +35,7 @@ public class AppleAuthenticationDelegate : IThirdPartyAuthenticationDelegate
         var httpResponse = await client.SendAsync(httpRequest);
         var json = await httpResponse.Content.ReadAsStringAsync();
 
-        var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+        var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(json)!;
         if (dictionary.ContainsKey("error"))
         {
             Console.WriteLine(dictionary["error"]);
@@ -55,33 +57,41 @@ public class AppleAuthenticationDelegate : IThirdPartyAuthenticationDelegate
         };
     }
 
-    private string CreateSecretJwt()
+    private string CreateSecretJwt(IConfiguration configuration)
     {
         var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-        var privateKey = Environment.GetEnvironmentVariable("APPLE_PRIVATE_KEY");
+
+        var privateKey = configuration["Apple:PrivateKey"] ?? throw new MissingConfigurationException("Apple:PrivateKey");
+        var bundleId = configuration["Apple:BundleId"] ?? throw new MissingConfigurationException("Apple:BundleId");
+        var kid = configuration["Apple:Kid"] ?? throw new MissingConfigurationException("Apple:Kid");
+
         ecdsa.ImportPkcs8PrivateKey(Convert.FromBase64String(privateKey), out _);
         var key = new ECDsaSecurityKey(ecdsa);
         var signingCredentials = new SigningCredentials(key, "ES256");
 
-        var jwtHeader = new JwtHeader(signingCredentials);
-        jwtHeader.Add("kid", Environment.GetEnvironmentVariable("APPLE_KID"));
+        var jwtHeader = new JwtHeader(signingCredentials) { { "kid", kid } };
 
-        var iss = Environment.GetEnvironmentVariable("APPLE_TEAM_ID");
+        var iss = configuration["Apple:TeamId"];
         var claims = new List<Claim>
         {
-            new ("sub", Environment.GetEnvironmentVariable("APPLE_BUNDLE_ID")),
+            new ("sub", bundleId),
         };
         var jwtPayload = new JwtPayload(
-            iss,
-            "https://appleid.apple.com", 
-            claims, 
-            DateTime.Now, 
-            DateTime.Now.Add(TimeSpan.FromMinutes(5)), 
-            DateTime.Now
-        );
-        
+                iss,
+                "https://appleid.apple.com",
+                claims,
+                DateTime.Now,
+                DateTime.Now.Add(TimeSpan.FromMinutes(5)),
+                DateTime.Now
+            );
+
         var jwt = new JwtSecurityToken(jwtHeader, jwtPayload);
         var handler = new JwtSecurityTokenHandler();
         return handler.WriteToken(jwt);
+    }
+
+    public Task<AuthThirdPartyResult> Authenticate(AuthThirdPartyRequest request)
+    {
+        throw new NotImplementedException();
     }
 }

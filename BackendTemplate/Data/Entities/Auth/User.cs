@@ -2,12 +2,12 @@ namespace BackendTemplate.Data.Entities.Auth;
 
 public class User : EntityBase
 {
-    public string Email { get; set; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
+    public required string Email { get; set; }
+    public required string FirstName { get; set; }
+    public required string LastName { get; set; }
     public string? Password { get; set; }
-    public List<UserRole> Roles { get; set; }
-    public UserStatus Status { get; set; }
+    public required List<UserRole> Roles { get; set; }
+    public required UserStatus Status { get; set; }
     public string? RefreshToken { get; set; }
     public string? AppleId { get; set; }
     public string? GoogleId { get; set; }
