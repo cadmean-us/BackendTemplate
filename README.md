@@ -32,22 +32,12 @@ the solution directory name.
 Now use the Rider's refactor option to rename the project
 inside the solution.
 
-### 2. Modify project's root namespace
+### 3. Modify project's root namespace
 
 Now you need to change the project's root namespace to reflect
 your project name. For how to do it in Rider see 
 [this article](https://www.jetbrains.com/help/rider/Refactorings__Adjust_Namespaces.html)
 .
-
-### 3. Setup Docker
-
-Modify the Dockerfile so that the .dll file name matched
-the project's name in the `ENTRYPOINT` directive:
-
-`ENTRYPOINT ["dotnet", "<ProjectName>.dll"]`
-
-Then modify the `docker-compose.yaml` file. Change services'
-names, change network's name and ip.
 
 ### 4. Change the environment
 
@@ -55,13 +45,95 @@ Edit `.env` file to your needs.
 
 ### 5. Rename files that start with 'Cad'
 
+- Configuration/CadOptions.cs
+- Controllers/CadController.cs
+- Exceptions/CadException.cs
+
+### 6. Update project properties
+
+Edit the Docker image name:
+```
+<ContainerImageName>cadmean.azurecr.io/backend-template</ContainerImageName>
+```
+
+## System requirements
+
+- .NET 7.0
+- ASP.NET 7.0
+- Docker with compose plugin
+
+## Configuration
+
+The project can use different methods of configuration:
+
+- `appsettings.Development.json` (only for development, it's included in the VCS)
+- `appsettings.Production.json` (not included in VCS)
+- Environment variables
+
+Environment variables will override settings from JSON files if the naming convention is followed: `Section__Variable`.
+
+For details see [microsoft docs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-7.0).
+
+## Run the project locally
+
+First, you will need a database for the backend to connect to.
+You can start the database through docker compose.
+
+Create a `.env` file with the following variables:
+```
+POSTGRES_PASSWORD=Nyd9vqADyhQB44gJ
+POSTGRES_USER=ubunut
+POSTGRES_DB=hazedev
+```
+Then run:
+```
+docker compose up -d database
+```
+
+Then apply migrations:
+```
+dotnet ef database update --connection "Host=127.0.0.1;Username=ubunut;Password=<password>;Database=<db name>" --project HazeBackend
+```
+
+Now you can run the project with your IDE or with dotnet cli (run the command in the solution direcory):
+```
+dotnet run --project HazeBackend
+```
+
 ## Migrations
 
-Running migrations locally:
-
+Creating new migration:
 ```
-dotnet ef migrations add <migration name>
-dotnet ef database update --connection "Host=127.0.0.1;Username=ubunut;Password=\!Devpassword1;Database=dbname"
+dotnet ef migrations add <migration name> --project HazeBackend
 ```
 
+Applying migrations:
+```
+dotnet ef database update --connection "Host=127.0.0.1;Username=ubunut;Password=<password>;Database=<db name>" --project HazeBackend
+```
 
+## Deploy project to server
+
+### Build the image
+
+The following command shoud be executed in the project folder,
+i.e. `cd HazeBackend` inside the solution directory.
+
+Build beta:
+```
+dotnet publish --os linux --arch x64 /t:PublishContainer -c Release -p:ContainerImageTag=beta
+docker push cadmean.azurecr.io/haze-backend:beta
+```
+
+Build master:
+```
+dotnet publish --os linux --arch x64 /t:PublishContainer -c Release -p:ContainerImageTag=master
+docker push cadmean.azurecr.io/haze-backend:master
+```
+
+### Update the server
+
+Command to update server:
+```
+git pull; docker compose pull; docker compose up -d haze-backend; yes | docker image prune
+```
