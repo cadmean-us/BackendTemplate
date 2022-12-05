@@ -10,7 +10,7 @@ public static class ValidationHelper
     {
         var context = new ValidationContext(obj);
         var results = new List<ValidationResult>();
-        var isValid = Validator.TryValidateObject(obj, context, results);
+        var isValid = Validator.TryValidateObject(obj, context, results, true);
         if (!isValid)
         {
             throw new InvalidDtoExceptions();
