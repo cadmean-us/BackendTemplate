@@ -1,6 +1,11 @@
+using BackendTemplate.Data.Entities.Auth;
+using BackendTemplate.Database;
+using BackendTemplate.Helpers;
+using Cadmean.RPC.ASP;
+
 namespace BackendTemplate.Controllers;
 
-public class CadController
+public class CadController : FunctionController
 {
     protected readonly UnitOfWork UnitOfWork = new();
 
